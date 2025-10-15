@@ -5,7 +5,7 @@ if (window.location.search) {
 
     window.localStorage.setItem('code', codeVal);
 
-    window.location.href = 'https://bnidevs.github.io/common-ground/spotify-callback/';
+    window.location.href = 'https://bnidevs.github.io/common-ground/';
 }
 
 const data = {};
