@@ -15,7 +15,7 @@ const getToken = async () => {
             client_id: "054e13aa07214d4094f6b01f265ae1fb",
             grant_type: 'authorization_code',
             code,
-            redirect_uri: redirectUri,
+            redirect_uri: 'https://bnidevs.github.io/common-ground/spotify-callback/',
             code_verifier: codeVerifier,
         }),
     }
