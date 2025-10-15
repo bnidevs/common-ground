@@ -34,7 +34,7 @@ const getplaylists = async (token) => {
                         name: e.name,
                         songListLink: e.tracks.href
                     }
-                )
+                })
             };
             pagesize = data['items'].length;
         })
