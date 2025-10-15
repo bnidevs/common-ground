@@ -1,8 +1,12 @@
 .login {
     background-color: green;
-    width: 10em;
-    height: 2em;
+    width: 30em;
+    height: 10em;
     border-radius: 3px;
+    
+    position: fixed;
+    top: calc(50vh - 50%);
+    left: calc(50vw - 50%);
 }
 
 .hide {
