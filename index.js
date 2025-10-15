@@ -1,8 +1,33 @@
 let playlists;
 let songs;
 
+const getToken = async () => {
+    const codeVerifier = window.localStorage.getItem('code_verifier');
+    const code = window.localStorage.getItem('code');
+
+    const url = "https://accounts.spotify.com/api/token";
+    const payload = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            client_id: clientId,
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: redirectUri,
+            code_verifier: codeVerifier,
+        }),
+    }
+
+    const body = await fetch(url, payload);
+    const response = await body.json();
+
+    window.localStorage.setItem('access_token', response.access_token);
+}
+
 const main = async () => {
-    const token = window.localStorage.getItem('code');
+    const token = await getToken();
     await getplaylists(token);
 }
 
