@@ -34,6 +34,8 @@ const getplaylists = async (token) => {
             };
             pagesize = data['items'].length;
         })
+
+        page += 50;
     };
 
     console.log(playlists);
