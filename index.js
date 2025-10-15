@@ -3,7 +3,7 @@ let songs;
 
 const main = async () => {
     const token = window.localStorage.getItem('code');
-    await getplaylists();
+    await getplaylists(token);
 }
 
 const getplaylists = async (token) => {
