@@ -46,8 +46,9 @@ const auth = async () => {
 
 const loginBtn = document.getElementById('login');
 
-if (window.localStorage.getItem('code_verifier')) {
+if (window.localStorage.getItem('code_verifier') && window.localStorage.getItem('code')) {
     loginBtn.classList.add('hide');
 } else {
     loginBtn.addEventListener('click', auth);
+    window.localStorage.clear();
 }
