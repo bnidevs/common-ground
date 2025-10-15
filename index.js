@@ -1,7 +1,3 @@
-if (window.localStorage.getItem('code_verifier') && window.localStorage.getItem('code')) {
-    main();
-}
-
 let playlists;
 let songs;
 
@@ -45,4 +41,8 @@ const getplaylists = async (token) => {
 
 const getsongs = async () => {
 
+}
+
+if (window.localStorage.getItem('code_verifier') && window.localStorage.getItem('code')) {
+    main();
 }
