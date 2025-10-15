@@ -3,7 +3,7 @@ if (window.location.search) {
 
     const codeVal = params.get('code');
 
-    window.localStorage.setItem('code', code);
+    window.localStorage.setItem('code', codeVal);
 
     window.location.href = 'https://bnidevs.github.io/common-ground/spotify-callback/';
 }
