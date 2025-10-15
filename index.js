@@ -14,7 +14,7 @@ const getplaylists = async (token) => {
     let page = 0;
     let pagesize = 50;
     while (pagesize > 0) {
-        fetch(playlistlink(page), {
+        pagesize = await fetch(playlistlink(page), {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -32,7 +32,8 @@ const getplaylists = async (token) => {
                     }
                 })
             };
-            pagesize = data['items'].length;
+            
+            return data['items'].length;
         })
 
         page += 50;
