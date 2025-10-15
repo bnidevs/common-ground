@@ -12,7 +12,7 @@ const getToken = async () => {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-            client_id: clientId,
+            client_id: "054e13aa07214d4094f6b01f265ae1fb",
             grant_type: 'authorization_code',
             code,
             redirect_uri: redirectUri,
