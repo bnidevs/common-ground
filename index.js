@@ -43,6 +43,6 @@ const getplaylists = async (token) => {
     console.log(playlists);
 }
 
-const songs = async () => {
+const getsongs = async () => {
 
 }
