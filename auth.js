@@ -44,11 +44,11 @@ const auth = async () => {
     window.location.href = authUrl.toString();
 };
 
-const loginBtn = document.getElementById('login');
+const loginbtn = document.getElementById('login');
 
 if (window.localStorage.getItem('code_verifier') && window.localStorage.getItem('code')) {
-    loginBtn.classList.add('hide');
+    loginbtn.classList.add('hide');
 } else {
-    loginBtn.addEventListener('click', auth);
+    loginbtn.addEventListener('click', auth);
     window.localStorage.clear();
 }
