@@ -29,7 +29,7 @@ const getplaylists = async (token) => {
         .then(data => {
             playlists = {
                 ...playlists,
-                data['items'].map((e) => {
+                ...data['items'].map((e) => {
                     return {
                         name: e.name,
                         songListLink: e.tracks.href
