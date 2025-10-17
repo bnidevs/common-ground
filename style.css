@@ -10,6 +10,16 @@
     transform: translate(-50%, -50%);
 }
 
+.reset {
+    width: 10em;
+    height: 5em;
+    border-radius: 3px;
+    
+    position: fixed;
+    top: 3em;
+    left: 3em;
+}
+
 .hide {
     display: none;
 }

@@ -52,3 +52,10 @@ if (window.localStorage.getItem('code_verifier') && window.localStorage.getItem(
     loginbtn.addEventListener('click', auth);
     window.localStorage.clear();
 }
+
+const resetbtn = document.getElementById('reset');
+
+resetbtn.addEventListener('click', () => {
+    window.localStorage.clear();
+    window.location.reload();
+});

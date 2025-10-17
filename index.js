@@ -49,6 +49,8 @@ const getplaylists = async (token) => {
         })
         .then(response => response.json())
         .then(data => {
+            console.log(playlists);
+
             playlists = {
                 ...playlists,
                 ...data['items'].map((e) => {
@@ -58,6 +60,8 @@ const getplaylists = async (token) => {
                     }
                 })
             };
+
+            console.log(playlists);
             
             return data['items'].length;
         })
