@@ -1,4 +1,4 @@
-let playlists;
+let playlists = {};
 let songs;
 
 const getToken = async () => {
@@ -49,19 +49,9 @@ const getplaylists = async (token) => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log(playlists);
-
-            playlists = {
-                ...playlists,
-                ...data['items'].map((e) => {
-                    return {
-                        name: e.name,
-                        songListLink: e.tracks.href
-                    }
-                })
-            };
-
-            console.log(playlists);
+            data['items'].map((e) => {
+                playlists[e.name] = e.tracks.href;
+            });
             
             return data['items'].length;
         })
