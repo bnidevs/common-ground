@@ -50,7 +50,10 @@ const getplaylists = async (token) => {
         .then(response => response.json())
         .then(data => {
             data['items'].map((e) => {
-                playlists[e.name] = e.tracks.href;
+                playlists[e.id] = {
+                    name: e.name,
+                    tracklistlink: e.tracks.href
+                }
             });
             
             return data['items'].length;
