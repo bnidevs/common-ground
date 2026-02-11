@@ -1,5 +1,6 @@
 let playlists = {};
 let songs = {};
+let token;
 
 const getToken = async () => {
     const codeVerifier = window.localStorage.getItem('code_verifier');
@@ -28,12 +29,13 @@ const getToken = async () => {
 }
 
 const main = async () => {
-    const token = await getToken();
-    await getplaylists(token);
-    await getsongs(token);
+    token = await getToken();
+
+    await getplaylists();
+    await getsongs();
 }
 
-const getplaylists = async (token) => {
+const getplaylists = async () => {
     const playlistlink = (offset) => {
         return `https://api.spotify.com/v1/me/playlists?limit=50&offset=${offset}`;
     }
