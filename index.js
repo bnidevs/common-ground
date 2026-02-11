@@ -1,5 +1,5 @@
 let playlists = {};
-let songs;
+let songs = {};
 
 const getToken = async () => {
     const codeVerifier = window.localStorage.getItem('code_verifier');
@@ -30,6 +30,7 @@ const getToken = async () => {
 const main = async () => {
     const token = await getToken();
     await getplaylists(token);
+    await getsongs(token);
 }
 
 const getplaylists = async (token) => {
@@ -66,7 +67,19 @@ const getplaylists = async (token) => {
 }
 
 const getsongs = async () => {
-
+    for (let playlist in playlists) {
+        await fetch(playlists[playlist]['tracklistlink'], {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data['items'])
+        })
+    }
 }
 
 if (window.localStorage.getItem('code_verifier') && window.localStorage.getItem('code')) {
