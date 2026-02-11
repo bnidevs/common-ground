@@ -55,7 +55,8 @@ const getplaylists = async () => {
             data['items'].map((e) => {
                 playlists[e.id] = {
                     name: e.name,
-                    tracklistlink: e.tracks.href
+                    tracklistlink: e.tracks.href,
+                    songlist: []
                 }
             });
             
@@ -79,9 +80,19 @@ const getsongs = async () => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data['items'])
+            data['items'].map((s) => {
+                playlists[playlist]['songlist'].push(s.track.id);
+
+                songs[s.track.id] = {
+                    name: s.track.name,
+                    artist: s.track.artists[0].name,
+                    image: s.track.album.images[1].url
+                }
+            });
         })
     }
+
+    console.log(songs);
 }
 
 if (window.localStorage.getItem('code_verifier') && window.localStorage.getItem('code')) {
