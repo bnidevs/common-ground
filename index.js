@@ -32,7 +32,6 @@ const main = async () => {
     token = await getToken();
 
     await getplaylists();
-    await getsongs();
 }
 
 const getplaylists = async () => {
@@ -65,10 +64,6 @@ const getplaylists = async () => {
         page += 50;
     };
 
-    console.log(playlists);
-}
-
-const getsongs = async () => {
     for (let playlist in playlists) {
         await fetch(playlists[playlist]['tracklistlink'], {
             method: 'GET',
@@ -82,6 +77,8 @@ const getsongs = async () => {
             console.log(data['items'])
         })
     }
+
+    console.log(playlists);
 }
 
 if (window.localStorage.getItem('code_verifier') && window.localStorage.getItem('code')) {
