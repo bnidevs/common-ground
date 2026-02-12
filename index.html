@@ -569,14 +569,15 @@
         // Fetch all playlists
         const playlistsRaw = await fetchAllPlaylists(token);
         
-        // Fetch tracks for each playlist
+        // Fetch tracks for all playlists in parallel (with concurrency limit)
         const songs = {};
         const playlists = [];
+        let completed = 0;
+        const total = playlistsRaw.length;
+        const CONCURRENCY = 6; // Spotify rate limit friendly
         
-        for (let i = 0; i < playlistsRaw.length; i++) {
-          const p = playlistsRaw[i];
-          updateLoadingProgress(`Loading playlist ${i + 1}/${playlistsRaw.length}: ${p.name}`);
-          
+        // Process playlists in batches
+        const processPlaylist = async (p) => {
           try {
             const tracks = await fetchPlaylistTracks(p.id, token);
             const songIds = [];
@@ -599,16 +600,43 @@
             }
             
             if (songIds.length > 0) {
-              playlists.push({
-                i: p.id,
-                n: p.name,
-                s: songIds
-              });
+              return { i: p.id, n: p.name, s: songIds };
             }
           } catch (e) {
             console.warn(`Failed to load playlist ${p.name}:`, e);
           }
-        }
+          return null;
+        };
+        
+        // Run with concurrency limit
+        const runWithConcurrency = async (items, fn, limit) => {
+          const results = [];
+          const executing = new Set();
+          
+          for (const item of items) {
+            const promise = fn(item).then(result => {
+              executing.delete(promise);
+              completed++;
+              updateLoadingProgress(`Loading playlists... ${completed}/${total}`);
+              return result;
+            });
+            
+            executing.add(promise);
+            results.push(promise);
+            
+            if (executing.size >= limit) {
+              await Promise.race(executing);
+            }
+          }
+          
+          return Promise.all(results);
+        };
+        
+        updateLoadingProgress(`Loading playlists... 0/${total}`);
+        const playlistResults = await runWithConcurrency(playlistsRaw, processPlaylist, CONCURRENCY);
+        
+        // Filter out nulls and add to playlists array
+        playlistResults.forEach(p => { if (p) playlists.push(p); });
         
         // Build MUSIC_DATA
         window.MUSIC_DATA = {
