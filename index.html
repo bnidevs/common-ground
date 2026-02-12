@@ -536,12 +536,19 @@
     
     async function fetchPlaylistTracks(playlistId, token) {
       const tracks = [];
-      let url = `/playlists/${playlistId}/tracks?limit=100`;
+      let offset = 0;
+      const limit = 100;
+      let total = Infinity;
       
-      while (url) {
-        const data = await fetchSpotify(url, token);
-        tracks.push(...data.items.filter(item => item.track && item.track.id));
-        url = data.next ? data.next.replace('https://api.spotify.com/v1', '') : null;
+      while (offset < total) {
+        const data = await fetchSpotify(`/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`, token);
+        total = data.total;
+        
+        // Filter valid tracks
+        const validItems = data.items.filter(item => item && item.track && item.track.id);
+        tracks.push(...validItems);
+        
+        offset += limit;
       }
       
       return tracks;
@@ -570,37 +577,32 @@
         const playlistsRaw = await fetchAllPlaylists(token);
         
         // Fetch tracks for all playlists in parallel (with concurrency limit)
-        const songs = {};
-        const playlists = [];
+        const allPlaylistData = [];
         let completed = 0;
         const total = playlistsRaw.length;
         const CONCURRENCY = 6; // Spotify rate limit friendly
         
-        // Process playlists in batches
+        // Process playlists in batches - return raw data, merge later
         const processPlaylist = async (p) => {
           try {
             const tracks = await fetchPlaylistTracks(p.id, token);
-            const songIds = [];
+            const playlistTracks = [];
             
             for (const item of tracks) {
               const track = item.track;
-              if (!track || !track.id) continue;
+              // Skip null tracks, local files, and episodes
+              if (!track || !track.id || track.is_local || track.type === 'episode') continue;
               
-              songIds.push(track.id);
-              
-              if (!songs[track.id]) {
-                songs[track.id] = {
-                  i: track.id,
-                  n: track.name,
-                  a: track.artists[0]?.name || 'Unknown',
-                  img: track.album.images?.[1]?.url || track.album.images?.[0]?.url || '',
-                  c: classifyGenre(track.artists[0]?.name || '')
-                };
-              }
+              playlistTracks.push({
+                id: track.id,
+                name: track.name,
+                artist: track.artists?.[0]?.name || 'Unknown',
+                img: track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || '',
+              });
             }
             
-            if (songIds.length > 0) {
-              return { i: p.id, n: p.name, s: songIds };
+            if (playlistTracks.length > 0) {
+              return { id: p.id, name: p.name, tracks: playlistTracks };
             }
           } catch (e) {
             console.warn(`Failed to load playlist ${p.name}:`, e);
@@ -635,8 +637,30 @@
         updateLoadingProgress(`Loading playlists... 0/${total}`);
         const playlistResults = await runWithConcurrency(playlistsRaw, processPlaylist, CONCURRENCY);
         
-        // Filter out nulls and add to playlists array
-        playlistResults.forEach(p => { if (p) playlists.push(p); });
+        // Now merge all results into songs and playlists (single-threaded, no race conditions)
+        const songs = {};
+        const playlists = [];
+        
+        for (const result of playlistResults) {
+          if (!result) continue;
+          
+          const songIds = [];
+          for (const track of result.tracks) {
+            songIds.push(track.id);
+            
+            if (!songs[track.id]) {
+              songs[track.id] = {
+                i: track.id,
+                n: track.name,
+                a: track.artist,
+                img: track.img,
+                c: classifyGenre(track.artist)
+              };
+            }
+          }
+          
+          playlists.push({ i: result.id, n: result.name, s: songIds });
+        }
         
         // Build MUSIC_DATA
         window.MUSIC_DATA = {
