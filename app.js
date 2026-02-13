@@ -124,9 +124,10 @@ async function fetchPlaylistTracks(playlistId, token) {
     const data = await fetchSpotify(`/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`, token);
     total = data.total;
     
-    // Filter valid tracks
-    const validItems = data.items.filter(item => item && item.track && item.track.id);
-    tracks.push(...validItems);
+    // Push ALL items - we'll filter later with better debugging
+    if (data.items) {
+      tracks.push(...data.items);
+    }
     
     offset += limit;
   }
@@ -157,7 +158,6 @@ async function loadSpotifyData(token) {
     const playlistsRaw = await fetchAllPlaylists(token);
     
     // Fetch tracks for all playlists in parallel (with concurrency limit)
-    const allPlaylistData = [];
     let completed = 0;
     const total = playlistsRaw.length;
     const CONCURRENCY = 6; // Spotify rate limit friendly
@@ -168,10 +168,15 @@ async function loadSpotifyData(token) {
         const tracks = await fetchPlaylistTracks(p.id, token);
         const playlistTracks = [];
         
+        let skippedNull = 0, skippedLocal = 0, skippedEpisode = 0;
+        
         for (const item of tracks) {
           const track = item.track;
-          // Skip null tracks, local files, and episodes
-          if (!track || !track.id || track.is_local || track.type === 'episode') continue;
+          
+          // Debug: count what we're skipping
+          if (!track || !track.id) { skippedNull++; continue; }
+          if (track.is_local) { skippedLocal++; continue; }
+          if (track.type === 'episode') { skippedEpisode++; continue; }
           
           playlistTracks.push({
             id: track.id,
@@ -181,13 +186,17 @@ async function loadSpotifyData(token) {
           });
         }
         
-        if (playlistTracks.length > 0) {
-          return { id: p.id, name: p.name, tracks: playlistTracks };
+        // Log if we skipped anything
+        if (skippedNull + skippedLocal + skippedEpisode > 0) {
+          console.log(`Playlist "${p.name}": ${playlistTracks.length} tracks kept, skipped ${skippedNull} null, ${skippedLocal} local, ${skippedEpisode} episodes`);
         }
+        
+        // Return playlist even if empty (so we can debug)
+        return { id: p.id, name: p.name, tracks: playlistTracks, totalFromApi: tracks.length };
       } catch (e) {
         console.warn(`Failed to load playlist ${p.name}:`, e);
+        return null;
       }
-      return null;
     };
     
     // Run with concurrency limit
@@ -221,8 +230,14 @@ async function loadSpotifyData(token) {
     const songs = {};
     const playlists = [];
     
+    let totalTracksFromApi = 0;
+    let totalTracksAfterFilter = 0;
+    
     for (const result of playlistResults) {
       if (!result) continue;
+      
+      totalTracksFromApi += result.totalFromApi;
+      totalTracksAfterFilter += result.tracks.length;
       
       const songIds = [];
       for (const track of result.tracks) {
@@ -239,8 +254,15 @@ async function loadSpotifyData(token) {
         }
       }
       
+      // Always add playlist (even if empty, for debugging)
       playlists.push({ i: result.id, n: result.name, s: songIds });
     }
+    
+    console.log(`=== LOADING SUMMARY ===`);
+    console.log(`Playlists fetched: ${playlistResults.filter(r => r).length}`);
+    console.log(`Total tracks from API: ${totalTracksFromApi}`);
+    console.log(`Total tracks after filtering: ${totalTracksAfterFilter}`);
+    console.log(`Unique songs: ${Object.keys(songs).length}`);
     
     // Build MUSIC_DATA
     window.MUSIC_DATA = {
@@ -248,7 +270,7 @@ async function loadSpotifyData(token) {
       playlists: playlists
     };
     
-    console.log(`Loaded ${MUSIC_DATA.songs.length} songs from ${MUSIC_DATA.playlists.length} playlists`);
+    console.log(`Final: ${MUSIC_DATA.songs.length} songs from ${MUSIC_DATA.playlists.length} playlists`);
     
     // Initialize visualization
     document.getElementById('loading').classList.remove('visible');
