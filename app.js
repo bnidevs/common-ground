@@ -90,12 +90,47 @@ async function getToken(code) {
   return data.access_token;
 }
 
-async function fetchSpotify(endpoint, token) {
-  const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  if (!response.ok) throw new Error(`Spotify API error: ${response.status}`);
-  return response.json();
+async function fetchSpotify(endpoint, token, retries = 5) {
+  let lastError;
+  
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      // Handle rate limiting
+      if (response.status === 429) {
+        // Get retry-after header (in seconds), default to exponential backoff
+        const retryAfter = parseInt(response.headers.get('Retry-After') || '0');
+        const backoffTime = retryAfter > 0 
+          ? retryAfter * 1000 
+          : Math.min(1000 * Math.pow(2, attempt) + Math.random() * 1000, 30000);
+        
+        console.warn(`Rate limited on ${endpoint}, waiting ${Math.round(backoffTime/1000)}s (attempt ${attempt + 1}/${retries})`);
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        continue;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Spotify API error: ${response.status}`);
+      }
+      
+      return response.json();
+      
+    } catch (error) {
+      lastError = error;
+      
+      // For network errors, also retry with backoff
+      if (attempt < retries - 1) {
+        const backoffTime = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 1000, 30000);
+        console.warn(`Request failed for ${endpoint}, retrying in ${Math.round(backoffTime/1000)}s (attempt ${attempt + 1}/${retries})`);
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+      }
+    }
+  }
+  
+  throw lastError || new Error(`Failed after ${retries} attempts: ${endpoint}`);
 }
 
 async function fetchAllPlaylists(token) {
@@ -160,7 +195,7 @@ async function loadSpotifyData(token) {
     // Fetch tracks for all playlists in parallel (with concurrency limit)
     let completed = 0;
     const total = playlistsRaw.length;
-    const CONCURRENCY = 6; // Spotify rate limit friendly
+    const CONCURRENCY = 3; // Reduced to avoid rate limits
     
     // Process playlists in batches - return raw data, merge later
     const processPlaylist = async (p) => {
