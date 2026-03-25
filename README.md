@@ -2,8 +2,6 @@
 
 A visualization tool that shows how your Spotify playlists connect through shared songs. See your music taste laid out in a beautiful, interactive grid where the most popular songs spiral out from the center.
 
-![Common Ground Screenshot](screenshot.png)
-
 ## Features
 
 - **Visual Grid Layout** — Songs arranged in a spiral pattern with the most cross-playlist songs at the center
